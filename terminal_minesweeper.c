@@ -327,11 +327,14 @@ void printBoard(){
     }
     printf("\n");   
 
-    // DEVTOOL: For printing mine positions    
-    // for(int i = 0; i<10; i++){
-    //     for(int j = 0; j<10; j++){
-    //         printf("%c", bombPos[i][j]);
-    //         printf(" ");
+    // //DEVTOOL: For printing mine positions    
+    // for(int i = 0; i<boardSize; i++){
+    //     for(int j = 0; j<boardSize; j++){
+    //         if( minePos[i][j]==MINE){
+    //             printf("%c ", MINE);
+    //         }else{
+    //             printf("- ");
+    //         }        
     //     }
     //     printf("\n");
     // }
