@@ -34,6 +34,7 @@ typedef struct coordinates
 // Function declarations
 void setupBoard();
 COORD playerMove();
+void placeFlag();
 void placeMines(COORD);
 char checkForMine(COORD);
 void updateBoard(COORD);
@@ -56,6 +57,7 @@ int main(){
     setupBoard();
     printBoard();
 
+    printf("------------ Press enter to play ---------------\n");
     COORD move = playerMove();  //First move
     placeMines(move);           //Place mines after first move
     updateBoard(move);
@@ -122,19 +124,77 @@ COORD playerMove(){
 
     while(true){
 
-        printf("Enter row and column to make a move (e.g., 2 3): ");
-        scanf("%d %d", &move.x,&move.y);
-        move.x--;
-        move.y--;
+        char input1;
+        char input2;
+        char garbage;
 
-        if(isValidMove(move)){
+        scanf("%c",&garbage); //Clear the buffer
+        
+        printf("** Enter F to place a flag, enter Q to exit the game **\n\n ");   
+        printf("Enter row number to make a move:  ");           
+        scanf("%c", &input1);
+
+        if (input1 == 'Q'+0 || input1 == 'q'+0) {
+            printf("Game exited. Thanks for playing!\n");
+            exit(0);
+        } else if(input1 == 'F' || input1 == 'f'){
+            placeFlag();
+            printBoard();
+            move = playerMove();
             break;
-        }
-        else{     
-            printf("Invalid move! \n");                  
-        }
+
+        } else {
+            move.x = input1-'1';
+            scanf("%c",&garbage); //Clear the buffer
+            printf("Enter column number:  ");
+            scanf("%c", &input2);
+            move.y = input2-'1';
+
+            if(isValidMove(move)){
+                break;
+            }
+            else{     
+                printf("Invalid move! \n");                  
+            }
+        }     
     } 
     return move;
+}
+//***************************************************************
+// Places a flag on user defined square
+void placeFlag(){
+
+    char input1;
+    char input2;
+    char garbage;
+    COORD flagMove;
+
+    printf("\n***** FLAG PLACEMENT MODE ***** \n");
+
+    while(true){
+
+        scanf("%c",&garbage); //Clear the buffer
+        printf("[Flag mode] Enter row number (F to exit flag mode):  ");             
+        scanf("%c", &input1);
+
+        if(input1 == 'F' || input1 == 'f'){
+            return;
+        } else {
+            flagMove.x = input1-'1';
+            scanf("%c",&garbage); //Clear the buffer
+            printf("[Flag mode] Enter column number:  ");
+            scanf("%c", &input2);
+            flagMove.y = input2-'1';
+
+            if(isValidMove(flagMove)){
+                board[flagMove.x][flagMove.y] = 'P';
+                printBoard();
+            }
+            else{     
+                printf("Invalid flag position! \n");                  
+            }
+        }
+    }   
 }
 //***************************************************************
 // Checks square for mine
@@ -180,7 +240,7 @@ int countAdjacentMines(COORD move){
     for(int i =0; i<boardSize; i++){
         for(int j =0; j<boardSize; j++){           
             if(minePos[i][j] == MINE){
-                if(abs(i-move.x)<2 && abs(j-move.y)<2){
+                if(abs(i-move.x)<2 && abs(j-move.y)<2){  //if within range of move square
                     nbrOfAdjacentBombs++;
                 } 
             }
@@ -222,8 +282,7 @@ void printBoard(){
         }
         printf("\n");
     }
-    printf("\n");
-    
+    printf("\n");   
 
     // DEVTOOL: For printing mine positions    
     // for(int i = 0; i<10; i++){
@@ -234,6 +293,8 @@ void printBoard(){
     //     printf("\n");
     // }
 }
+//***************************************************************
+// Updates the board so that all squares are cleared and all mines are displayed
 void revealBoard(){
     for(int i = 0; i<boardSize; i++){
         for(int j = 0; j<boardSize; j++){
