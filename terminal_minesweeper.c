@@ -17,8 +17,8 @@
 #define MINE '*'
 #define CLEARED ' '
 #define UNCLEARED '.'
-#define nbrOfMines 15
-#define boardSize 20
+#define nbrOfMines 9
+#define boardSize 9
 
 // Variables
 char board[boardSize][boardSize];
@@ -59,7 +59,6 @@ int main(){
     setupBoard();
     printBoard();
 
-    printf("------------ Press enter to play ---------------\n");
     COORD move = playerMove();  //First move
     placeMines(move);           //Place mines after first move
     updateBoard(move);
@@ -289,20 +288,31 @@ bool isValidMove(COORD move){
 //***************************************************************
 // Prints the current state of the board
 void printBoard(){
-    printf("\n   ");
-    for(int i = 0; i<boardSize; i++){
-        printf("%d ",i+1);
+    printf("\n  ");
+    if(boardSize>9){printf(" ");}
+
+    for(int i = 0; i<boardSize; i++){  //print column numbers on first row
+        if(i<9 && boardSize > 9){
+            
+            printf("%d  ",i+1);
+        } else{
+            printf("%d ",i+1);
+        }
     }
     printf("\n");
-    for(int i = 0; i<boardSize; i++){
-        if(i<9){
+    for(int i = 0; i<boardSize; i++){  // For each row
+        if(i<9 && boardSize > 9){
             printf(" %d ",i+1);
         }else{
             printf("%d ",i+1);
         }
-        for(int j = 0; j<boardSize; j++){
-            printf("%c", board[i][j]);
-            printf(" ");
+        for(int j = 0; j<boardSize; j++){  //For each column
+            if(boardSize > 9){
+                printf("%c  ", board[i][j]);
+            }
+            else{
+                printf("%c ", board[i][j]);
+            }           
         }
         if(i==2){
             printf("        Mines remaining: %d", nbrOfMines);
