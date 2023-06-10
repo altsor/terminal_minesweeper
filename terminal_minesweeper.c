@@ -17,13 +17,14 @@
 #define MINE '*'
 #define CLEARED ' '
 #define UNCLEARED '.'
-#define nbrOfMines 8
-#define boardSize 9
+#define nbrOfMines 15
+#define boardSize 20
 
 // Variables
 char board[boardSize][boardSize];
 char minePos[boardSize][boardSize];
 int squaresRemaining;
+int nbrFlagsPlaced;
 
 typedef struct coordinates
 {
@@ -54,6 +55,7 @@ int main(){
     printf("------------------------------------------------\n");
 
     squaresRemaining = sizeof(board);
+    nbrFlagsPlaced = 0;
     setupBoard();
     printBoard();
 
@@ -87,7 +89,7 @@ int main(){
         }
         
     }   
-    printf("Thanks for playing\n\n");
+    printf("\nThanks for playing\n\n");
     return 0;
 }
 //***************************************************************
@@ -124,37 +126,47 @@ COORD playerMove(){
 
     while(true){
 
-        char input1;
-        char input2;
-        char garbage;
-
-        scanf("%c",&garbage); //Clear the buffer
+        int input1;
+        int input2;
+        char inChar;
         
-        printf("** Enter F to place a flag, enter Q to exit the game **\n\n ");   
-        printf("Enter row number to make a move:  ");           
-        scanf("%c", &input1);
+        printf("** Enter F to place a flag, enter Q to exit the game **\n\n");   
+        printf(" Enter row number to make a move:  "); 
 
-        if (input1 == 'Q'+0 || input1 == 'q'+0) {
-            printf("Game exited. Thanks for playing!\n");
+        if (scanf("%d", &input1)) {   
+        } else {  
+            //If the user enters a character instead of an integer, the scanf call inside the if condition will fail 
+            //to read an integer, and it will return 0 (indicating that 0 items were successfully scanned).
+            //In the case where a character is entered, it remains in the input buffer after the failed scanf call.
+            //credit ChatGTP
+            scanf(" %c", &inChar);  // Added space before %c to skip whitespace
+        } //
+       
+        if (inChar == 'Q' || inChar  == 'q') {  //Exits the game if Q is entered
+            printf(" Game exited. Thanks for playing!\n");
             exit(0);
-        } else if(input1 == 'F' || input1 == 'f'){
+
+        } else if(inChar  == 'F' || inChar  == 'f'){  //Enters flag placing mode if F is entered
             placeFlag();
             printBoard();
-            move = playerMove();
+            move = playerMove();  //Continue the normal player move mode after flagmode is exited
             break;
 
-        } else {
-            move.x = input1-'1';
-            scanf("%c",&garbage); //Clear the buffer
-            printf("Enter column number:  ");
-            scanf("%c", &input2);
-            move.y = input2-'1';
+        } else {  // If an integer is entered
+            move.x = input1-1;
+
+            while ((getchar()) != '\n');  //Clear stdin buffer
+
+            printf(" Enter column number:  ");
+            scanf("%d", &input2); 
+            while ((getchar()) != '\n');  //Clear stdin buffer
+            move.y = input2-1;
 
             if(isValidMove(move)){
                 break;
             }
             else{     
-                printf("Invalid move! \n");                  
+                printf("\n Invalid move! \n");                  
             }
         }     
     } 
@@ -164,30 +176,47 @@ COORD playerMove(){
 // Places a flag on user defined square
 void placeFlag(){
 
-    char input1;
-    char input2;
-    char garbage;
+    int input1;
+    int input2;
+    char inChar;
     COORD flagMove;
 
-    printf("\n***** FLAG PLACEMENT MODE ***** \n");
+    printf("\n******* FLAG PLACEMENT MODE ******* \n");
+    printf("Use negative numbers to remove flags\n\n");
+    printBoard();
 
     while(true){
 
-        scanf("%c",&garbage); //Clear the buffer
-        printf("[Flag mode] Enter row number (F to exit flag mode):  ");             
-        scanf("%c", &input1);
+        while ((getchar()) != '\n'); //Clear stdin buffer
+        printf("[Flag mode] Enter row number (F to exit flag mode):  "); 
 
-        if(input1 == 'F' || input1 == 'f'){
-            return;
+        if (scanf("%d", &input1)) {  
         } else {
-            flagMove.x = input1-'1';
-            scanf("%c",&garbage); //Clear the buffer
-            printf("[Flag mode] Enter column number:  ");
-            scanf("%c", &input2);
-            flagMove.y = input2-'1';
+            scanf(" %c", &inChar);  // Added space before %c to skip whitespace
+        }            
 
+        if(inChar == 'F' || inChar == 'f'){  //Exits flag placing mode if F is entered
+            return;
+
+        } else {  // If integer is entered
+            flagMove.x = abs(input1)-1;
+
+            while ((getchar()) != '\n'); //Clear stdin buffer
+            printf("[Flag mode] Enter column number:  ");
+            scanf("%d", &input2);
+
+            flagMove.y = abs(input2)-1;
+            
             if(isValidMove(flagMove)){
-                board[flagMove.x][flagMove.y] = 'P';
+                if(input1<0 || input2<0){  //If user entered negative integers flags are removed
+                    if(board[flagMove.x][flagMove.y] == 'P'){
+                        board[flagMove.x][flagMove.y] = UNCLEARED;
+                        nbrFlagsPlaced--;
+                    }
+                }else if (board[flagMove.x][flagMove.y] = UNCLEARED){  // Flag is placed
+                    board[flagMove.x][flagMove.y] = 'P';
+                    nbrFlagsPlaced++;
+                }
                 printBoard();
             }
             else{     
@@ -210,22 +239,23 @@ char checkForMine(COORD posToCheck){
 // Updates the board to show cleared squares and number of adjacent mines
 void updateBoard(COORD move){
 
-    int adjacentBombs = countAdjacentMines(move); //Counts number of adjacent mines
+    int nbrOfAdjacentMines = countAdjacentMines(move); //Counts number of adjacent mines
  
-    if(adjacentBombs>0){
-        board[move.x][move.y] = adjacentBombs+'0';  //Square is set to number of adjacent mines
+    if(nbrOfAdjacentMines>0){
+        board[move.x][move.y] = nbrOfAdjacentMines+'0';  //Square is set to number of adjacent mines
         squaresRemaining--;
        
     }else{
         board[move.x][move.y] = CLEARED; // If no mines, square is set to empty space
         squaresRemaining--;
 
-        //Update adjacent squares 
+        //Update adjacent squares by going over the 8 neighboring squares and calling this function for each
         for(int i =move.x-1; i<=move.x+1; i++){
             for(int j =move.y-1; j<=move.y+1; j++){
                 
-                COORD neighbor = {i,j};          
-                if(isValidMove(neighbor) &&(i!=move.x || j!=move.y)){ //Check that the square is a new uncleared square
+                COORD neighbor = {i,j};     
+                //Checks that the neighbor square is a valid uncleared square that is not the current one.    
+                if(isValidMove(neighbor) &&(i!=move.x || j!=move.y)){ 
                     updateBoard(neighbor);
                 } 
             }
@@ -240,7 +270,7 @@ int countAdjacentMines(COORD move){
     for(int i =0; i<boardSize; i++){
         for(int j =0; j<boardSize; j++){           
             if(minePos[i][j] == MINE){
-                if(abs(i-move.x)<2 && abs(j-move.y)<2){  //if within range of move square
+                if(abs(i-move.x)<2 && abs(j-move.y)<2){  //if within range of current square
                     nbrOfAdjacentBombs++;
                 } 
             }
@@ -249,9 +279,9 @@ int countAdjacentMines(COORD move){
     return nbrOfAdjacentBombs;
 }
 //***************************************************************
-// Checks if a square coordinate is uncleared and within the board
+// Checks if a square is uncleared and within the board
 bool isValidMove(COORD move){
-    if(move.x >= 0 && move.x < boardSize && move.y >= 0 && move.y < boardSize && board[move.x][move.y] == UNCLEARED ){
+    if(move.x >= 0 && move.x < boardSize && move.y >= 0 && move.y < boardSize && (board[move.x][move.y] == UNCLEARED || board[move.x][move.y] == 'P')){
         return true;
     }
     return false;
@@ -278,6 +308,9 @@ void printBoard(){
             printf("        Mines remaining: %d", nbrOfMines);
         }
         if(i==4){
+            printf("        Flags placed: %d", nbrFlagsPlaced);
+        }
+        if(i==6){
             printf("        Uncleared squares: %d", squaresRemaining);
         }
         printf("\n");
